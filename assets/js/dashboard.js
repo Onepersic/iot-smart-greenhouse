@@ -1,0 +1,68 @@
+let state = loadState();
+let climateChart, soilChart, analyticsChart, toastTimer;
+const $ = (selector, root = document) => root.querySelector(selector);
+const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+function average(key) { return state.zones.reduce((sum, zone) => sum + zone[key], 0) / state.zones.length; }
+function timeAgo(time) { const mins = Math.max(0, Math.floor((Date.now() - time) / 60000)); if (mins < 1) return 'только что'; if (mins < 60) return `${mins} мин. назад`; const hours = Math.floor(mins / 60); return `${hours} ч. назад`; }
+function timeText(time) { return new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(new Date(time)); }
+function showToast(message) { const toast = $('#toast'); toast.textContent = message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 2300); }
+function addEvent(kind, title, detail) { state.events.unshift({ kind, title, detail, time: Date.now() }); state.events = state.events.slice(0, 80); }
+function renderKpis() {
+  if (!$('#avgTemp')) return;
+  $('#avgTemp').textContent = average('temp').toFixed(1); $('#avgHumidity').textContent = Math.round(average('humidity')); $('#avgSoil').textContent = Math.round(average('soil')); $('#waterLevel').textContent = Math.round(state.water);
+  $('#waterProgress').style.width = `${state.water}%`;
+  $('#waterTrend').className = state.water < 25 ? 'trend warning' : 'trend steady'; $('#waterTrend').innerHTML = state.water < 25 ? '⚠ <span>низкий уровень</span>' : '● <span>достаточно</span>';
+  $('#updatedAt').textContent = new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(new Date());
+  ['temp-bars', 'humidity-bars', 'soil-bars'].forEach((cls, series) => { const box = $(`.${cls}`); box.innerHTML = ''; state.history.slice(-9).forEach(item => { const bar = document.createElement('i'); const value = series === 0 ? item.temp : series === 1 ? item.humidity : item.soil; bar.style.height = `${Math.max(25, Math.min(100, value))}%`; box.append(bar); }); });
+}
+function zoneStatus(zone) { if (zone.soil < state.settings.soilMin) return { text: 'Нужен полив', warn: true }; if (zone.temp > state.settings.tempMax) return { text: 'Жарко', warn: true }; return { text: 'Всё хорошо', warn: false }; }
+function renderZones() {
+  const list = $('#zoneList'), grid = $('#zoneGrid');
+  if (list) list.innerHTML = state.zones.map(zone => { const status = zoneStatus(zone); return `<div class="zone-row"><span class="zone-thumb">${zone.icon}</span><span class="zone-info"><b>${zone.name}</b><small>${zone.variety.split(' · ')[1]}</small></span><span class="zone-condition ${status.warn ? 'warn' : ''}">${status.text}</span><span class="zone-metric">${zone.temp.toFixed(1)}°</span></div>`; }).join('');
+  if (grid) grid.innerHTML = state.zones.map(zone => { const status = zoneStatus(zone); return `<article class="panel zone-card"><div class="zone-card-head"><span class="zone-thumb">${zone.icon}</span><span><h2>${zone.name}</h2><p>${zone.variety}</p></span><span class="zone-condition ${status.warn ? 'warn' : ''}">${status.text}</span></div><div class="zone-card-art"><i class="plant"></i><i class="plant"></i><i class="plant"></i><i class="plant"></i><i class="plant"></i></div><div class="zone-metrics"><div class="zone-metric-cell"><small>Температура</small><b>${zone.temp.toFixed(1)} °C</b></div><div class="zone-metric-cell"><small>Воздух</small><b>${zone.humidity} %</b></div><div class="zone-metric-cell"><small>Почва</small><b>${zone.soil} %</b></div><div class="zone-metric-cell"><small>Освещение</small><b>${(zone.light / 1000).toFixed(1)}k лк</b></div></div><div class="zone-card-foot"><span>CO₂ ${zone.co2} ppm</span><span>● Датчики онлайн</span></div></article>`; }).join('');
+}
+function sensorRecords() { return state.zones.flatMap(zone => [ ['Температура воздуха', '☼', `${zone.temp.toFixed(1)} °C`], ['Влажность воздуха', '◌', `${zone.humidity} %`], ['Влажность почвы', '⌁', `${zone.soil} %`], ['Освещённость', '☀', `${zone.light.toLocaleString('ru-RU')} лк`], ['Уровень CO₂', '◉', `${zone.co2} ppm`] ].map(([name, icon, value]) => ({ name, icon, value, zone: zone.name }))); }
+function renderSensors() { const rows = $('#sensorRows'); if (!rows) return; rows.innerHTML = sensorRecords().map(sensor => `<tr><td><span class="device-name"><i class="device-icon">${sensor.icon}</i><b>${sensor.name}</b></span></td><td>${sensor.zone}</td><td><b>${sensor.value}</b></td><td><span class="status-pill"><i class="live-dot"></i> Онлайн</span></td><td>${timeAgo(Date.now() - 4000)}</td></tr>`).join('') + `<tr><td><span class="device-name"><i class="device-icon">◒</i><b>Уровень воды</b></span></td><td>Резервуар</td><td><b>${Math.round(state.water)} %</b></td><td><span class="status-pill"><i class="live-dot"></i> Онлайн</span></td><td>${timeAgo(Date.now() - 3000)}</td></tr>`; }
+function renderActuators() {
+  if (!$('#modeSwitch')) return;
+  $('#modeSwitch').querySelectorAll('button').forEach(btn => btn.classList.toggle('selected', btn.dataset.mode === state.mode));
+  $('#modeLabel').textContent = state.mode === 'auto' ? '● Автоматический режим' : '● Ручное управление';
+  $('#actuatorList').innerHTML = Object.entries(actuatorInfo).map(([key, info]) => `<div class="actuator-row"><span class="actuator-icon">${info.icon}</span><span class="actuator-info"><b>${info.name}</b><small>${info.detail}</small></span><span class="actuator-state">${state.actuators[key] ? 'Включено' : 'Выключено'}</span><button class="toggle ${state.actuators[key] ? 'on' : ''}" data-actuator="${key}" aria-label="${info.name}" aria-pressed="${state.actuators[key]}" ${state.mode === 'auto' ? 'disabled' : ''}></button></div>`).join('');
+  $('#soilMin').value = state.settings.soilMin; $('#tempMax').value = state.settings.tempMax; $('#lightMin').value = state.settings.lightMin;
+}
+function chartOptions() { return { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#263b2b', padding: 9, titleFont: { size: 10 }, bodyFont: { size: 9 }, cornerRadius: 6 } }, scales: { x: { grid: { display: false }, border: { display: false }, ticks: { color: '#9aa59b', font: { size: 8 }, maxTicksLimit: 6 } }, y: { border: { display: false, dash: [3, 3] }, grid: { color: '#eef1ec' }, ticks: { color: '#9aa59b', font: { size: 8 }, maxTicksLimit: 5 } } } }; }
+function renderCharts() {
+  if (!window.Chart) return;
+  const labels = state.history.map(item => item.label), options = chartOptions();
+  const line = (canvas, existing, datasets, opts = options) => { if (existing) { existing.data.labels = labels; existing.data.datasets.forEach((dataset, i) => dataset.data = datasets[i].data); existing.update('none'); return existing; } return new Chart($(canvas), { type: 'line', data: { labels, datasets }, options: opts }); };
+  if ($('#climateChart')) climateChart = line('#climateChart', climateChart, [{ label: 'Температура °C', data: state.history.map(x => x.temp), borderColor: '#6fa579', backgroundColor: '#6fa57915', fill: true, tension: .38, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2, yAxisID: 'y' }, { label: 'Влажность %', data: state.history.map(x => x.humidity), borderColor: '#8abbd4', backgroundColor: '#8abbd415', fill: true, tension: .38, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2, yAxisID: 'y1' }], { ...options, scales: { ...options.scales, y: { ...options.scales.y, min: 15, max: 35 }, y1: { position: 'right', min: 30, max: 90, grid: { display: false }, border: { display: false }, ticks: { color: '#9aa59b', font: { size: 8 }, maxTicksLimit: 5 } } } });
+  if ($('#soilChart')) soilChart = line('#soilChart', soilChart, [{ label: 'Почва %', data: state.history.map(x => x.soil), borderColor: '#76a66f', backgroundColor: '#76a66f20', fill: true, tension: .4, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 }], { ...options, scales: { ...options.scales, y: { ...options.scales.y, min: 15, max: 75 } } });
+  const ctx = $('#analyticsChart');
+  if (!ctx) return;
+  if (!analyticsChart) analyticsChart = new Chart(ctx, { type: 'bar', data: { labels: ['Температура', 'Влажность воздуха', 'Влажность почвы', 'Освещение'], datasets: [{ label: 'Сейчас', data: [average('temp') / 40 * 100, average('humidity'), average('soil'), average('light') / 20000 * 100], backgroundColor: ['#e9b777', '#8abbd4', '#76a66f', '#e6cb70'], borderRadius: 5, barThickness: 24 }] }, options: { ...options, indexAxis: 'y', scales: { x: { ...options.scales.y, min: 0, max: 100, ticks: { ...options.scales.y.ticks, callback: value => `${value}%` } }, y: { ...options.scales.x, grid: { display: false } } } } });
+  else { analyticsChart.data.datasets[0].data = [average('temp') / 40 * 100, average('humidity'), average('soil'), average('light') / 20000 * 100]; analyticsChart.update('none'); }
+}
+function render() { renderKpis(); renderZones(); renderSensors(); renderActuators(); renderEvents(); renderAnalytics(); renderCharts(); }
+function navigate(page) { $$('.page').forEach(el => el.classList.toggle('active', el.id === `page-${page}`)); $$('.nav-link').forEach(el => el.classList.toggle('active', el.dataset.page === page)); if (page === 'analytics') setTimeout(() => { climateChart?.resize(); soilChart?.resize(); analyticsChart?.resize(); }, 80); $('#sidebar').classList.remove('open'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function init() {
+  state.zones ??= structuredClone(zoneDefaults); state.history ??= makeHistory(); state.events ??= initialEvents;
+  const currentPage = document.body.dataset.currentPage;
+  $$('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.page === currentPage));
+  const theme = localStorage.getItem('greenhouse-theme') || 'light'; document.body.classList.toggle('theme-dark', theme === 'dark');
+  if ($('#themeButton')) $('#themeButton').textContent = theme === 'dark' ? '☀' : '☾';
+  runAutomation(); checkAlerts(); save(); render();
+  if ($('#themeButton')) $('#themeButton').addEventListener('click', () => { const dark = !document.body.classList.contains('theme-dark'); document.body.classList.toggle('theme-dark', dark); localStorage.setItem('greenhouse-theme', dark ? 'dark' : 'light'); $('#themeButton').textContent = dark ? '☀' : '☾'; });
+  if ($('#settingsThemeButton')) $('#settingsThemeButton').addEventListener('click', () => $('#themeButton').click());
+  if ($('#settingsResetButton')) $('#settingsResetButton').addEventListener('click', () => $('#resetButton').click());
+  if ($('#menuButton')) $('#menuButton').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
+  document.addEventListener('click', event => { const button = event.target.closest('button[data-page]'); if (button) window.location.href = `${button.dataset.page === 'events' ? 'alerts' : button.dataset.page}.html`; });
+  if ($('#modeSwitch')) $('#modeSwitch').addEventListener('click', event => { const button = event.target.closest('[data-mode]'); if (!button || state.mode === button.dataset.mode) return; state.mode = button.dataset.mode; addEvent('manual', `Режим управления: ${state.mode === 'auto' ? 'автоматический' : 'ручной'}`, 'Настройка изменена оператором'); runAutomation(); save(); render(); showToast('Режим управления обновлён'); });
+  if ($('#actuatorList')) $('#actuatorList').addEventListener('click', event => { const button = event.target.closest('[data-actuator]'); if (!button || state.mode !== 'manual') return; const key = button.dataset.actuator; if (key === 'pump' && state.water <= 15 && !state.actuators.pump) return showToast('Насос заблокирован: низкий уровень воды'); state.actuators[key] = !state.actuators[key]; addEvent('manual', `${actuatorInfo[key].name}: ${state.actuators[key] ? 'включено' : 'выключено'}`, 'Команда оператора'); save(); render(); });
+  [['soilMin', 10, 80], ['tempMax', 20, 40], ['lightMin', 1000, 20000]].forEach(([id, min, max]) => { const input = $(`#${id}`); if (input) input.addEventListener('change', event => { const value = Math.max(min, Math.min(max, Number(event.target.value) || min)); state.settings[id] = value; event.target.value = value; addEvent('manual', 'Обновлены пороговые значения', 'Изменены параметры автоматического управления'); runAutomation(); save(); render(); showToast('Пороговое значение сохранено'); }); });
+  if ($('#exportButton')) $('#exportButton').addEventListener('click', () => { const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), zones: state.zones, water: state.water, events: state.events, history: state.history }, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'greenhouse-data.json'; link.click(); URL.revokeObjectURL(url); showToast('Данные экспортированы'); });
+  if ($('#resetButton')) $('#resetButton').addEventListener('click', () => { state = seed(); sessionStorage.removeItem('greenhouse-alert-dismissed'); runAutomation(); save(); render(); showToast('Данные сброшены к начальному состоянию'); });
+  if ($('#clearEvents')) $('#clearEvents').addEventListener('click', () => { state.events = []; save(); renderEvents(); showToast('Журнал событий очищен'); });
+  if ($('#dismissAlert')) $('#dismissAlert').addEventListener('click', () => { const alert = state.events.find(item => item.kind === 'warning' || item.kind === 'critical'); if (alert) sessionStorage.setItem('greenhouse-alert-dismissed', String(alert.time)); $('#alertBanner').hidden = true; });
+  setInterval(simulate, 3000);
+}
+document.addEventListener('DOMContentLoaded', init);
