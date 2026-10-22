@@ -5,7 +5,7 @@ const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 function average(key) { return state.zones.reduce((sum, zone) => sum + zone[key], 0) / state.zones.length; }
 function timeAgo(time) { const mins = Math.max(0, Math.floor((Date.now() - time) / 60000)); if (mins < 1) return 'только что'; if (mins < 60) return `${mins} мин. назад`; const hours = Math.floor(mins / 60); return `${hours} ч. назад`; }
 function timeText(time) { return new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(new Date(time)); }
-function showToast(message) { const toast = $('#toast'); toast.textContent = message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 2300); }
+function showToast(message) { const toast = $('#toast'); if (!toast) return; toast.textContent = message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 2300); }
 function addEvent(kind, title, detail, metadata = {}) { state.events.unshift({ kind, title, detail, time: Date.now(), ...(kind === 'warning' || kind === 'critical' ? { status: 'open' } : {}), ...metadata }); state.events = state.events.slice(0, 80); }
 function renderKpis() {
   if (!$('#avgTemp')) return;
@@ -16,7 +16,7 @@ function renderKpis() {
   $('#updatedAt').textContent = new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(new Date());
   ['temp-bars', 'humidity-bars', 'soil-bars'].forEach((cls, series) => { const box = $(`.${cls}`); box.innerHTML = ''; state.history.slice(-9).forEach(item => { const bar = document.createElement('i'); const value = series === 0 ? item.temp : series === 1 ? item.humidity : item.soil; bar.style.height = `${Math.max(25, Math.min(100, value))}%`; box.append(bar); }); });
 }
-function zoneStatus(zone) { if (zone.soil < state.settings.soilMin) return { text: 'Нужен полив', warn: true }; if (zone.temp > state.settings.tempMax) return { text: 'Жарко', warn: true }; return { text: 'Всё хорошо', warn: false }; }
+function zoneStatus(zone) { if (!zone.online) return { text: 'Датчики офлайн', warn: true }; if (zone.soil < state.settings.soilMin && state.water <= state.settings.waterCritical) return { text: 'Полив заблокирован', warn: true }; if (zone.soil < state.settings.soilMin) return { text: 'Нужен полив', warn: true }; if (zone.temp > state.settings.tempMax) return { text: 'Жарко', warn: true }; if (zone.temp < state.settings.tempMin) return { text: 'Холодно', warn: true }; if (zone.humidity < state.settings.humidityMin || zone.humidity > state.settings.humidityMax) return { text: 'Влажность вне порога', warn: true }; return { text: 'Всё хорошо', warn: false }; }
 function zoneRiskScore(zone) { return Math.min(100, (zone.temp > state.settings.tempMax ? 25 : zone.temp < state.settings.tempMin ? 20 : 0) + (zone.soil < state.settings.soilMin ? 25 : 0) + (state.water <= state.settings.waterCritical ? 30 : 0) + (zone.co2 > 1500 ? 15 : 0) + (!zone.online ? 20 : 0)); }
 function renderZones() {
   const list = $('#zoneList'), grid = $('#zoneGrid');
