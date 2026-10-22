@@ -1,5 +1,5 @@
 let state = loadState();
-let climateChart, soilChart, waterChart, analyticsChart, toastTimer, simulationTimer;
+let climateChart, humidityChart, soilChart, waterChart, analyticsChart, toastTimer, simulationTimer;
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 function average(key) { return state.zones.reduce((sum, zone) => sum + zone[key], 0) / state.zones.length; }
@@ -50,7 +50,8 @@ function renderCharts() {
   if (!window.Chart) return;
   const labels = state.history.map(item => item.label), options = chartOptions();
   const line = (canvas, existing, datasets, opts = options) => { if (existing) { existing.data.labels = labels; existing.data.datasets.forEach((dataset, i) => dataset.data = datasets[i].data); existing.update('none'); return existing; } return new Chart($(canvas), { type: 'line', data: { labels, datasets }, options: opts }); };
-  if ($('#climateChart')) climateChart = line('#climateChart', climateChart, [{ label: 'Температура °C', data: state.history.map(x => x.temp), borderColor: '#6fa579', backgroundColor: '#6fa57915', fill: true, tension: .38, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2, yAxisID: 'y' }, { label: 'Влажность %', data: state.history.map(x => x.humidity), borderColor: '#8abbd4', backgroundColor: '#8abbd415', fill: true, tension: .38, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2, yAxisID: 'y1' }], { ...options, scales: { ...options.scales, y: { ...options.scales.y, min: 15, max: 35 }, y1: { position: 'right', min: 30, max: 90, grid: { display: false }, border: { display: false }, ticks: { color: '#9aa59b', font: { size: 8 }, maxTicksLimit: 5 } } } });
+  if ($('#climateChart')) climateChart = line('#climateChart', climateChart, [{ label: 'Температура °C', data: state.history.map(x => x.temp), borderColor: '#6fa579', backgroundColor: '#6fa57915', fill: true, tension: .38, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 }], { ...options, scales: { ...options.scales, y: { ...options.scales.y, min: 15, max: 35 } } });
+  if ($('#humidityChart')) humidityChart = line('#humidityChart', humidityChart, [{ label: 'Влажность воздуха %', data: state.history.map(x => x.humidity), borderColor: '#8abbd4', backgroundColor: '#8abbd415', fill: true, tension: .38, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 }], { ...options, scales: { ...options.scales, y: { ...options.scales.y, min: 30, max: 90 } } });
   if ($('#soilChart')) soilChart = line('#soilChart', soilChart, [{ label: 'Почва %', data: state.history.map(x => x.soil), borderColor: '#76a66f', backgroundColor: '#76a66f20', fill: true, tension: .4, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2 }], { ...options, scales: { ...options.scales, y: { ...options.scales.y, min: 15, max: 75 } } });
   const waterCanvas = $('#waterChart');
   if (waterCanvas) {
@@ -64,7 +65,7 @@ function renderCharts() {
   else { analyticsChart.data.datasets[0].data = [average('temp') / 40 * 100, average('humidity'), average('soil'), average('light') / 20000 * 100]; analyticsChart.update('none'); }
 }
 function render() { renderKpis(); renderZones(); renderSensors(); renderActuators(); renderEvents(); renderAnalytics(); renderCharts(); }
-function navigate(page) { $$('.page').forEach(el => el.classList.toggle('active', el.id === `page-${page}`)); $$('.nav-link').forEach(el => el.classList.toggle('active', el.dataset.page === page)); if (page === 'analytics') setTimeout(() => { climateChart?.resize(); soilChart?.resize(); analyticsChart?.resize(); }, 80); $('#sidebar').classList.remove('open'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function navigate(page) { $$('.page').forEach(el => el.classList.toggle('active', el.id === `page-${page}`)); $$('.nav-link').forEach(el => el.classList.toggle('active', el.dataset.page === page)); if (page === 'analytics') setTimeout(() => { climateChart?.resize(); humidityChart?.resize(); soilChart?.resize(); analyticsChart?.resize(); }, 80); $('#sidebar').classList.remove('open'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 function init() {
   state.zones ??= structuredClone(zoneDefaults); state.history ??= makeHistory(); state.events ??= initialEvents;
   const currentPage = document.body.dataset.currentPage;
