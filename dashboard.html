@@ -63,7 +63,8 @@
           </div>
 
           <div class="dashboard-grid">
-            <section class="panel chart-panel"><div class="panel-heading"><div><h2>Климат в теплице</h2><p>Температура и влажность воздуха</p></div><div class="chart-legend"><span><i class="legend-temp"></i> Температура</span><span><i class="legend-hum"></i> Влажность</span></div></div><div class="chart-wrap"><canvas id="climateChart" aria-label="График температуры и влажности"></canvas></div></section>
+            <section class="panel chart-panel"><div class="panel-heading"><div><h2>Температура воздуха</h2><p>Динамика за последние 12 часов</p></div><span class="range-pill small">12 часов ⌄</span></div><div class="chart-wrap"><canvas id="climateChart" aria-label="График температуры воздуха"></canvas></div></section>
+            <section class="panel chart-panel"><div class="panel-heading"><div><h2>Влажность воздуха</h2><p>Динамика за последние 12 часов</p></div><span class="range-pill small">12 часов ⌄</span></div><div class="chart-wrap"><canvas id="humidityChart" aria-label="График влажности воздуха"></canvas></div></section>
             <section class="panel zone-panel"><div class="panel-heading"><div><h2>Зоны выращивания</h2><p>Состояние растений и датчиков</p></div><a class="text-button" href="zones.html">Все зоны →</a></div><div class="zone-list" id="zoneList"></div></section>
             <section class="panel chart-panel soil-panel"><div class="panel-heading"><div><h2>Влажность почвы</h2><p>Динамика за последние 12 часов</p></div><span class="range-pill small">12 часов ⌄</span></div><div class="chart-wrap short"><canvas id="soilChart" aria-label="График влажности почвы"></canvas></div></section>
             <section class="panel chart-panel"><div class="panel-heading"><div><h2>Запас воды</h2><p>История уровня в резервуаре</p></div></div><div class="chart-wrap short"><canvas id="waterChart" aria-label="График уровня воды"></canvas></div></section>
