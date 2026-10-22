@@ -45,7 +45,7 @@
       <header class="topbar">
         <button class="mobile-menu" id="menuButton" aria-label="Открыть меню">☰</button>
         <div class="breadcrumbs">Мои объекты <span>/</span> <b>Северная теплица</b></div>
-        <div class="top-actions"><span class="simulator-badge"><span class="live-dot"></span> Симулятор активен</span><button class="icon-button theme-button" id="themeButton" title="Переключить тему" aria-label="Переключить тему">☾</button><button class="icon-button" id="resetButton" title="Сбросить данные" aria-label="Сбросить данные">↻</button><a class="icon-button notification-button" href="alerts.html" title="Оповещения" aria-label="Оповещения">♧<i id="notificationDot"></i></a></div>
+        <div class="top-actions"><span class="simulator-badge"><span class="live-dot"></span> Симулятор активен</span><span class="mode-indicator" id="modeIndicator">AUTO</span><button class="icon-button theme-button" id="themeButton" title="Переключить тему" aria-label="Переключить тему">☾</button><button class="icon-button" id="resetButton" title="Сбросить данные" aria-label="Сбросить данные">↻</button><a class="icon-button notification-button" href="alerts.html" title="Оповещения" aria-label="Оповещения">♧<i id="notificationDot"></i></a></div>
       </header>
 
       <div class="content">
@@ -58,16 +58,20 @@
             <article class="kpi-card"><div class="kpi-top"><span class="kpi-name">Влажность воздуха</span><span class="kpi-icon humidity-icon">◌</span></div><div class="kpi-value"><span id="avgHumidity">—</span><small>%</small></div><div class="kpi-foot"><span class="trend steady">↔ <span>стабильно</span></span><span class="kpi-target">Цель 50–75%</span></div><div class="mini-bars humidity-bars"></div></article>
             <article class="kpi-card"><div class="kpi-top"><span class="kpi-name">Влажность почвы</span><span class="kpi-icon soil-icon">⌁</span></div><div class="kpi-value"><span id="avgSoil">—</span><small>%</small></div><div class="kpi-foot"><span class="trend steady">↗ <span>хороший уровень</span></span><span class="kpi-target">Цель 35–65%</span></div><div class="mini-bars soil-bars"></div></article>
             <article class="kpi-card"><div class="kpi-top"><span class="kpi-name">Уровень воды</span><span class="kpi-icon water-icon">◒</span></div><div class="kpi-value"><span id="waterLevel">—</span><small>%</small></div><div class="kpi-foot"><span class="trend steady" id="waterTrend">● <span>достаточно</span></span><span class="kpi-target">Резервуар 500 л</span></div><div class="mini-progress"><i id="waterProgress"></i></div></article>
+            <article class="kpi-card"><div class="kpi-top"><span class="kpi-name">Активные оповещения</span><span class="kpi-icon soil-icon">!</span></div><div class="kpi-value"><span id="activeAlerts">—</span></div><div class="kpi-foot"><span class="trend steady">Открытые события</span></div></article>
+            <article class="kpi-card"><div class="kpi-top"><span class="kpi-name">Датчики онлайн</span><span class="kpi-icon humidity-icon">◉</span></div><div class="kpi-value"><span id="devicesOnline">—</span><small id="devicesTotal">/ —</small></div><div class="kpi-foot"><span class="trend steady">Связь устройств</span></div></article>
           </div>
 
           <div class="dashboard-grid">
             <section class="panel chart-panel"><div class="panel-heading"><div><h2>Климат в теплице</h2><p>Температура и влажность воздуха</p></div><div class="chart-legend"><span><i class="legend-temp"></i> Температура</span><span><i class="legend-hum"></i> Влажность</span></div></div><div class="chart-wrap"><canvas id="climateChart" aria-label="График температуры и влажности"></canvas></div></section>
             <section class="panel zone-panel"><div class="panel-heading"><div><h2>Зоны выращивания</h2><p>Состояние растений и датчиков</p></div><a class="text-button" href="zones.html">Все зоны →</a></div><div class="zone-list" id="zoneList"></div></section>
             <section class="panel chart-panel soil-panel"><div class="panel-heading"><div><h2>Влажность почвы</h2><p>Динамика за последние 12 часов</p></div><span class="range-pill small">12 часов ⌄</span></div><div class="chart-wrap short"><canvas id="soilChart" aria-label="График влажности почвы"></canvas></div></section>
+            <section class="panel chart-panel"><div class="panel-heading"><div><h2>Запас воды</h2><p>История уровня в резервуаре</p></div></div><div class="chart-wrap short"><canvas id="waterChart" aria-label="График уровня воды"></canvas></div></section>
             <section class="panel activity-panel"><div class="panel-heading"><div><h2>Последние события</h2><p>Что происходило в системе</p></div><a class="text-button" href="alerts.html">Весь журнал →</a></div><div class="event-list" id="recentEvents"></div></section>
           </div>
           <footer class="footer"><span>© 2026 Greenhouse Monitor</span><span><span class="live-dot"></span> Все системы работают</span></footer>
         </section>
       </div>
     </main>
+
 

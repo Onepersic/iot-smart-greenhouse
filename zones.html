@@ -45,11 +45,12 @@
       <header class="topbar">
         <button class="mobile-menu" id="menuButton" aria-label="Открыть меню">☰</button>
         <div class="breadcrumbs">Мои объекты <span>/</span> <b>Северная теплица</b></div>
-        <div class="top-actions"><span class="simulator-badge"><span class="live-dot"></span> Симулятор активен</span><button class="icon-button theme-button" id="themeButton" title="Переключить тему" aria-label="Переключить тему">☾</button><button class="icon-button" id="resetButton" title="Сбросить данные" aria-label="Сбросить данные">↻</button><a class="icon-button notification-button" href="alerts.html" title="Оповещения" aria-label="Оповещения">♧<i id="notificationDot"></i></a></div>
+        <div class="top-actions"><span class="simulator-badge"><span class="live-dot"></span> Симулятор активен</span><span class="mode-indicator" id="modeIndicator">AUTO</span><button class="icon-button theme-button" id="themeButton" title="Переключить тему" aria-label="Переключить тему">☾</button><button class="icon-button" id="resetButton" title="Сбросить данные" aria-label="Сбросить данные">↻</button><a class="icon-button notification-button" href="alerts.html" title="Оповещения" aria-label="Оповещения">♧<i id="notificationDot"></i></a></div>
       </header>
 
       <div class="content">
-<section class="page active" id="page-zones"><div class="page-heading"><div><div class="eyebrow">ОБЪЕКТ · GH-001</div><h1>Зоны выращивания</h1><p>Состояние микроклимата и культур по секторам теплицы.</p></div><button class="button button-primary" data-page="control">◉ <span>Настроить управление</span></button></div><div class="zone-grid" id="zoneGrid"></div></section>
+<section class="page active" id="page-zones"><div class="page-heading"><div><div class="eyebrow">ОБЪЕКТ · GH-001</div><h1>Зоны выращивания</h1><p>Состояние микроклимата и культур по секторам теплицы.</p></div><button class="button button-primary" data-page="control">◉ <span>Настроить управление</span></button></div><div class="table-toolbar zone-toolbar"><div class="filter-group"><input class="filter-control" id="zoneSearch" type="search" placeholder="Поиск зоны" aria-label="Поиск зоны"><select class="filter-control" id="zoneStatusFilter" aria-label="Фильтр зон"><option value="all">Все зоны</option><option value="normal">В норме</option><option value="attention">Требуют внимания</option></select></div></div><div class="zone-grid" id="zoneGrid"></div></section>
       </div>
     </main>
+
 
