@@ -10,7 +10,11 @@ function checkAlerts() {
   if (humidZone) checks.push(['warning', 'Высокая влажность воздуха', `Зона «${humidZone.name}» · ${humidZone.humidity}%`, { zone: humidZone.name, sensor: 'Влажность воздуха' }]);
   const highCo2 = state.zones.find(zone => zone.co2 > 1500);
   if (highCo2) checks.push(['warning', 'Высокий уровень CO₂', `Зона «${highCo2.name}» · ${highCo2.co2} ppm`, { zone: highCo2.name, sensor: 'Уровень CO₂' }]);
-  checks.forEach(([kind, title, detail, metadata]) => { if (!state.events.some(event => event.title === title && event.detail === detail && Date.now() - event.time < 15 * 60 * 1000)) addEvent(kind, title, detail, metadata); });
+  checks.forEach(([kind, title, detail, metadata]) => {
+    const existing = state.events.find(event => event.title === title && Date.now() - event.time < 15 * 60 * 1000 && (!event.zone || event.zone === metadata.zone));
+    if (existing) { existing.zone ||= metadata.zone; existing.sensor ||= metadata.sensor; existing.status ||= 'open'; existing.detail = detail; }
+    else addEvent(kind, title, detail, metadata);
+  });
 }
 
 function renderEvents() {
