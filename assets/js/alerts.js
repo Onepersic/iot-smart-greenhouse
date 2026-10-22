@@ -1,4 +1,20 @@
 function checkAlerts() {
+  const alertSensors = [['Критический уровень воды', 'Уровень воды'], ['Низкий уровень воды', 'Уровень воды'], ['Низкая влажность почвы', 'Влажность почвы'], ['Перегрев теплицы', 'Температура воздуха'], ['Высокая влажность воздуха', 'Влажность воздуха'], ['Высокий уровень CO₂', 'Уровень CO₂'], ['Датчики зоны офлайн', 'Связь устройств']];
+  state.events.forEach(event => {
+    if (!['warning', 'critical'].includes(event.kind)) return;
+    const zoneFromDetail = event.detail?.match(/Зона «([^»]+)»/);
+    event.zone ||= zoneFromDetail?.[1] || (event.title.includes('воды') ? 'Резервуар' : 'Объект');
+    event.sensor ||= alertSensors.find(([title]) => title === event.title)?.[1] || 'Система';
+    event.status ||= 'open';
+  });
+  const recentAlerts = new Set();
+  state.events = state.events.filter((event, index) => {
+    if (!['warning', 'critical'].includes(event.kind) || Date.now() - Number(event.time) >= 15 * 60 * 1000) return true;
+    const key = `${event.kind}:${event.title}:${event.zone || ''}`;
+    if (recentAlerts.has(key)) return false;
+    recentAlerts.add(key);
+    return true;
+  });
   const checks = [];
   if (state.water <= state.settings.waterCritical) checks.push(['critical', 'Критический уровень воды', 'Насос заблокирован. Срочно пополните резервуар.', { zone: 'Резервуар', sensor: 'Уровень воды' }]);
   else if (state.water < 25) checks.push(['warning', 'Низкий уровень воды', `В резервуаре осталось ${Math.round(state.water)}% воды.`, { zone: 'Резервуар', sensor: 'Уровень воды' }]);
